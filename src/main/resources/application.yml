@@ -1,3 +1,5 @@
-app:
-  post: 2
-  get: 2
+request-map:
+  methods:
+    firstApi: 2
+    secondApi: 2
+    default: 3

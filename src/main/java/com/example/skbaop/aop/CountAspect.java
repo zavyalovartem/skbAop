@@ -1,44 +1,45 @@
 package com.example.skbaop.aop;
 
 import com.example.skbaop.api.ApiController;
+import lombok.Data;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 @Aspect
 @Component
-@EnableConfigurationProperties
-@ConfigurationProperties("app")
+@Data
+@ConfigurationProperties(prefix = "request-map")
 public class CountAspect {
 
-    @Value("${app.get}")
-    private int numberOfRequestsToGetApi;
-    @Value("${app.post}")
-    private int numberOfRequestsToPostApi;
     private static final Logger log = LoggerFactory.getLogger(ApiController.class);
+    private Map<String, Integer> methods;
 
     @Around("@annotation(com.example.skbaop.aop.LogApi)")
-    public void preventAccess(ProceedingJoinPoint jp) throws Throwable {
-        if (jp.getSignature().getName().equals("firstApi")) {
-            --numberOfRequestsToGetApi;
-
-            if (numberOfRequestsToGetApi >= 0) {
+    public synchronized void preventAccess(ProceedingJoinPoint jp) throws Throwable {
+        var methodName = jp.getSignature().getName();
+        if (methods.containsKey(methodName)) {
+            var currentNumber = methods.get(methodName);
+            --currentNumber;
+            methods.put(methodName, currentNumber);
+            if (currentNumber >= 0) {
                 jp.proceed();
             } else {
-                log.info("Access to first restricted");
+                log.info("Access to " + methodName +" restricted");
             }
         } else{
-            --numberOfRequestsToPostApi;
-            if (numberOfRequestsToPostApi >= 0){
+            var currentDefaultNumber = methods.get("default");
+            --currentDefaultNumber;
+            if (currentDefaultNumber >= 0){
                 jp.proceed();
             } else{
-                log.info("Access to second restricted");
+                log.info("Access to " + methodName +" restricted");
             }
         }
     }
