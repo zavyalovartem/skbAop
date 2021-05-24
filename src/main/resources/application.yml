@@ -1,5 +1,5 @@
 request-map:
   methods:
     firstApi: 2
-    secondApi: 2
+    secondApi: 4
     default: 3
